@@ -71,3 +71,56 @@ def pregunta_01():
 
 
     """
+    import zipfile
+    import os
+    import pandas as pd
+
+    zip_file_path = "files/input.zip"
+    extracted_dir = "files"
+    output_dir = "files/output"
+
+    # 1. Descomprimir el archivo zip
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        zip_ref.extractall(extracted_dir)
+
+    # Asegurarse de que el directorio de salida exista
+    os.makedirs(output_dir, exist_ok=True)
+
+    def process_directory(dataset_type):
+        """
+        Procesa los archivos de texto en un directorio dado y retorna un DataFrame.
+        """
+        data = []
+        # Define los posibles sentimientos/directorios
+        sentiments = ['negative', 'positive', 'neutral']
+
+        for sentiment in sentiments:
+            sentiment_path = os.path.join(extracted_dir, 'input', dataset_type, sentiment)
+            if os.path.exists(sentiment_path):
+                # Recorre todos los archivos .txt en el directorio de sentimiento
+                for filename in os.listdir(sentiment_path):
+                    if filename.endswith(".txt"):
+                        file_path = os.path.join(sentiment_path, filename)
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                phrase = f.read().strip()  # Lee la frase y elimina espacios en blanco
+                            data.append({'phrase': phrase, 'target': sentiment})
+                        except Exception as e:
+                            print(f"Error reading file {file_path}: {e}")
+                            continue
+        return pd.DataFrame(data)
+
+    # 2. Procesar el directorio 'train'
+    train_df = process_directory('train')
+    train_output_path = os.path.join(output_dir, "train_dataset.csv")
+    train_df.to_csv(train_output_path, index=False)
+
+    # 3. Procesar el directorio 'test'
+    test_df = process_directory('test')
+    test_output_path = os.path.join(output_dir, "test_dataset.csv")
+    test_df.to_csv(test_output_path, index=False)
+
+    # Debug: Verificar que los DataFrames no estén vacíos
+    print(f"Train dataset shape: {train_df.shape}")
+    print(f"Test dataset shape: {test_df.shape}")
+    
